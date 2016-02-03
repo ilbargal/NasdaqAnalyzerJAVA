@@ -13,28 +13,29 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import Canopy.CanopyMapper.Counter;
+import Writables.ClusterCenter;
 import Writables.StockWritable;
 
-public class CanopyReducer extends Reducer<IntWritable, CanopyCenter, CanopyCenter, IntWritable> {
-	private List<CanopyCenter> canopyFinalCenters;
+public class CanopyReducer extends Reducer<IntWritable, ClusterCenter, ClusterCenter, IntWritable> {
+	private List<ClusterCenter> canopyFinalCenters;
 	
 	@Override
 	protected void setup(Context context)
 			throws IOException, InterruptedException {
 		super.setup(context);
-		this.canopyFinalCenters = new ArrayList<CanopyCenter>();
+		this.canopyFinalCenters = new ArrayList<ClusterCenter>();
 	}
 	
 	@Override
-	protected void reduce(IntWritable key, Iterable<CanopyCenter> values, Context context)
+	protected void reduce(IntWritable key, Iterable<ClusterCenter> values, Context context)
 			throws IOException, InterruptedException {
 			
-		for(final CanopyCenter valueCenter : values) {
+		for(final ClusterCenter valueCenter : values) {
 			
 			double distance = Integer.MAX_VALUE;
 			
 			boolean inCluster = false;
-			for (CanopyCenter center : this.canopyFinalCenters) {
+			for (ClusterCenter center : this.canopyFinalCenters) {
 				distance = DistanceMeasurer.measureDistance(center.getCenter(), valueCenter.getCenter());
 				
 				if ( distance<= DistanceMeasurer.T1 ) {
@@ -49,7 +50,7 @@ public class CanopyReducer extends Reducer<IntWritable, CanopyCenter, CanopyCent
 			// If there are'nt canopy centers or the stock vector is'nt close to any canopy centers already
 			// Set current stock vector as canopy center itself
 			if (!inCluster) {
-			   	CanopyCenter center = new CanopyCenter(valueCenter);
+				ClusterCenter center = new ClusterCenter(valueCenter);
 			    this.canopyFinalCenters.add(center);
 			}	
 		}
@@ -60,18 +61,18 @@ public class CanopyReducer extends Reducer<IntWritable, CanopyCenter, CanopyCent
 			throws IOException, InterruptedException {
 		super.cleanup(context);
 		
-//		//Write sequence file with results of Canopy Center, Number of connected vectors.
-//		FileSystem fs = FileSystem.get(context.getConfiguration());
-//		String rootFolder = context.getConfiguration().get("projectFolder");
-//		System.out.println(rootFolder);
-//		Path canopy = new Path(rootFolder + "/files/CanopyCenters/canopyCenters.seq");
-//		context.getConfiguration().set("canopy.path",canopy.toString());
-//		
-//		final SequenceFile.Writer centerWriter = SequenceFile.createWriter(fs,context.getConfiguration(), canopy , CanopyCenter.class,IntWritable.class);
-		for (CanopyCenter center : this.canopyFinalCenters) {
-//			centerWriter.append(center,new IntWritable(center.getCloseVectors()));
+		//Write sequence file with results of Canopy Center, Number of connected vectors.
+		FileSystem fs = FileSystem.get(context.getConfiguration());
+		String rootFolder = context.getConfiguration().get("projectFolder");
+		Path ClusterCentersPath = new Path(rootFolder + "/files/ClusterCenters/ClusterCenters.seq");
+		context.getConfiguration().set("canopy.path",ClusterCentersPath.toString());
+		
+		@SuppressWarnings("deprecation")
+		final SequenceFile.Writer centerWriter = SequenceFile.createWriter(fs,context.getConfiguration(), ClusterCentersPath , ClusterCenter.class,IntWritable.class);
+		for (ClusterCenter center : this.canopyFinalCenters) {
+			centerWriter.append(center,new IntWritable(center.getCloseVectors()));
 			context.write(center, new IntWritable(center.getCloseVectors()));
 		}
-//		centerWriter.close();	
+		centerWriter.close();
 	}
 }

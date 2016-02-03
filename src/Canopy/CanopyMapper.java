@@ -11,13 +11,13 @@ import org.junit.internal.matchers.IsCollectionContaining;
 import Writables.*;
 import Writables.Vector.VectorType;
 
-public class CanopyMapper extends Mapper<LongWritable, Text, IntWritable, CanopyCenter> {
+public class CanopyMapper extends Mapper<LongWritable, Text, IntWritable, ClusterCenter> {
 	private final int OPEN_STOCK_TYPE_INDEX = 0;
 	private final int HIGH_STOCK_TYPE_INDEX = 1;
 	private final int LOW_STOCK_TYPE_INDEX = 2;
 	private final int CLOSE_STOCK_TYPE_INDEX = 3;
 	
-	private List<CanopyCenter> canopyCenters;
+	private List<ClusterCenter> ClusterCenters;
 	
 	public static enum Counter{
 		NUMBER_OF_VECTORS;
@@ -26,7 +26,7 @@ public class CanopyMapper extends Mapper<LongWritable, Text, IntWritable, Canopy
 	 @Override
 	 public void setup(Context context) throws IOException,InterruptedException {
 		 super.setup(context);
-		 this.canopyCenters = new ArrayList<CanopyCenter>();
+		 this.ClusterCenters = new ArrayList<ClusterCenter>();
 	 }
 	 
 	 @Override
@@ -37,7 +37,7 @@ public class CanopyMapper extends Mapper<LongWritable, Text, IntWritable, Canopy
 		context.getCounter(Counter.NUMBER_OF_VECTORS).increment(1);
 		boolean inCluster = false;
 		
-		for (CanopyCenter center : this.canopyCenters) {
+		for (ClusterCenter center : this.ClusterCenters) {
 			distance = DistanceMeasurer.measureDistance(center.getCenter(), stock);
 			
 			if ( distance<= DistanceMeasurer.T1 ) {
@@ -54,8 +54,8 @@ public class CanopyMapper extends Mapper<LongWritable, Text, IntWritable, Canopy
 		// If there are'nt canopy centers or the stock vector is'nt close to any canopy centers
 		// Set current stock vector as canopy center itself
 		if (!inCluster) {
-		   	CanopyCenter center = new CanopyCenter(stock);
-		    this.canopyCenters.add(center);
+			ClusterCenter center = new ClusterCenter(stock);
+		    this.ClusterCenters.add(center);
 		    center.addConnectedStock();
 		}
 	}
@@ -63,8 +63,8 @@ public class CanopyMapper extends Mapper<LongWritable, Text, IntWritable, Canopy
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
 		super.cleanup(context); 
- 		for (int center = 0; center < this.canopyCenters.size(); center++) {
- 			context.write(new IntWritable(1), this.canopyCenters.get(center));
+ 		for (int center = 0; center < this.ClusterCenters.size(); center++) {
+ 			context.write(new IntWritable(1), this.ClusterCenters.get(center));
 		}
 	} 
 	 

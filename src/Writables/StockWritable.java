@@ -121,5 +121,19 @@ public class StockWritable implements WritableComparable<StockWritable> {
 				return null;
 		}
 	}
-
+	
+	public Vector getStockVector(int type) {
+		switch (type) {
+			case 0:
+				return openVector;
+			case 1:
+				return highVector;
+			case 2:
+				return lowVector;
+			case 3:
+				return closeVector;
+			default:
+				return null;
+		}
+	}
 }
